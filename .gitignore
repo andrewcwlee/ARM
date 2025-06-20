@@ -1,0 +1,17 @@
+__pycache__
+venv
+.idea
+*.mp4
+.bash_history
+.cache/
+.local/
+.python_history
+nvidia-persistenced/
+results/
+rlight.egg-info
+run/*
+*.log
+*.csv
+eval/*
+*.pdf
+.vscode/*
