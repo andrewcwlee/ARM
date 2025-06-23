@@ -37,7 +37,7 @@ from pyrep.const import RenderMode
 from arm.rollout_generator import RolloutGenerator
 
 
-def _create_obs_config(camera_names: List[str], camera_resolution: List[int])->ObservationConfig:
+def _create_obs_config(camera_names: List[str], camera_resolution: List[int], enable_mask: bool = False)->ObservationConfig:
     unused_cams = CameraConfig()
     unused_cams.set_all(False)
 
@@ -45,7 +45,7 @@ def _create_obs_config(camera_names: List[str], camera_resolution: List[int])->O
 
         rgb=True,
         point_cloud=True,
-        mask=False,
+        mask=enable_mask,
         depth=True,
         image_size=camera_resolution,
         render_mode=RenderMode.OPENGL)
@@ -473,7 +473,8 @@ def main(cfg: DictConfig) -> None:
     cfg.rlbench.cameras = cfg.rlbench.cameras if isinstance(
         cfg.rlbench.cameras, ListConfig) else [cfg.rlbench.cameras]
     obs_config = _create_obs_config(cfg.rlbench.cameras,
-                                    cfg.rlbench.camera_resolution)
+                                    cfg.rlbench.camera_resolution,
+                                    enable_mask=(cfg.method.name == 'LENS'))
     
 
     assert len(cfg.rlbench.cameras) == 1
