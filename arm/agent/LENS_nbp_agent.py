@@ -28,7 +28,7 @@ class LensNBPAgent(Agent):
                  camera_names: List[str],
                  rotation_prediction_depth: int = 0,
                  ):
-        super(QAttentionStackAgent, self).__init__()
+        super(LensNBPAgent, self).__init__()
         self._qattention_agents = qattention_agents
         self._rotation_resolution = rotation_resolution
         self._camera_names = camera_names
