@@ -176,6 +176,41 @@ def run_seed(cfg: DictConfig, env, cams, train_device, env_device, seed) -> None
                                    device=train_device)
         
 
+    elif cfg.method.name == 'LENS':
+        from arm.ota import lens_launch_utils
+        
+        viewpoint_agent_bounds, viewpoint_env_bounds, viewpoint_resolution = \
+            lens_launch_utils.get_viewpoint_bounds(cfg)
+
+        # LENS Training (No Demonstrations Required)
+        explore_replay = lens_launch_utils.create_replay(
+            cfg.replay.batch_size, cfg.replay.timesteps,
+            cfg.replay.prioritisation,
+            replay_path if cfg.replay.use_disk else None,
+            cams, 
+            env,
+            viewpoint_agent_bounds,
+            viewpoint_resolution,
+            cfg.method.voxel_sizes)
+        replays = [explore_replay]
+
+        # Skip fill_replay - LENS trains without demonstrations
+        # (Following LENS plan: no demo loading for intrinsic reward training)
+        
+        # Create LENS agents
+        agent = lens_launch_utils.create_agent(
+            cfg, 
+            env, 
+            viewpoint_agent_bounds,
+            viewpoint_env_bounds,
+            viewpoint_resolution,
+            cfg.rlbench.scene_bounds,
+            cfg.rlbench.camera_resolution)
+        
+        # Create LENS rollout generator
+        rg = lens_launch_utils.create_rollout_generator(
+            cfg, viewpoint_agent_bounds, viewpoint_resolution,
+            viewpoint_env_bounds, train_device)
 
     elif 'C2FARM' in cfg.method.name:
 

@@ -922,3 +922,31 @@ def create_agent(cfg: DictConfig, env,viewpoint_agent_bounds,
 
     preprocess_agent = PreprocessAgent(pose_agent=rotation_agent)
     return preprocess_agent
+
+
+def create_rollout_generator(cfg, viewpoint_agent_bounds, viewpoint_resolution, 
+                           viewpoint_env_bounds, device):
+    """
+    Create LENS rollout generator using OTA patterns.
+    
+    Args:
+        cfg: LENS configuration
+        viewpoint_agent_bounds: Agent viewpoint bounds
+        viewpoint_resolution: Viewpoint resolution
+        viewpoint_env_bounds: Environment viewpoint bounds  
+        device: Compute device
+        
+    Returns:
+        OtaRolloutGenerator instance for LENS
+    """
+    from arm.ota.rollout_generator import OtaRolloutGenerator
+    
+    return OtaRolloutGenerator(
+        scene_bounds=cfg.rlbench.scene_bounds,
+        viewpoint_agent_bounds=viewpoint_agent_bounds,
+        viewpoint_resolution=viewpoint_resolution,
+        viewpoint_env_bounds=viewpoint_env_bounds,
+        viewpoint_align=cfg.method.viewpoint_align,
+        reach_reward=cfg.method.reach_reward,
+        device=device
+    )
