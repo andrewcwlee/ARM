@@ -110,11 +110,39 @@ class LensNBPAgent(Agent):
             continuous_action = np.concatenate([observation_elements['viewpoint_coordinate'],
                                                 reference_fixation],axis=-1)
         else:
-            # 
-            continuous_action = np.concatenate([
-                observation_elements['attention_output'],
-                utils.discrete_euler_to_quaternion(rgai[:-1], self._rotation_resolution),
-                rgai[-1:]])
+            # LENS Phase 6: Generate continuous end-effector deltas for manipulation
+            # Convert discrete rotation indices to continuous pose deltas
+            if len(rgai) >= 4:  # Has rotation and gripper data
+                # Convert discrete indices to continuous deltas with exploration noise
+                rotation_indices = rgai[:-1].astype(np.float32)  # Remove gripper, keep rotations
+                gripper_action = rgai[-1:].astype(np.float32)    # Gripper action
+                
+                # Add exploration noise for continuous control
+                rotation_noise = np.random.normal(0.0, 0.3, size=rotation_indices.shape)
+                rotation_indices = rotation_indices + rotation_noise
+                
+                # Scale to small rotation deltas: ±2.5° (half of OTA's 5° resolution)
+                max_rotation_index = 360 // self._rotation_resolution
+                normalized_rotations = (rotation_indices / max_rotation_index) * 2.0 - 1.0  # [-1, 1]
+                rotation_deltas_deg = normalized_rotations * 2.5  # ±2.5° deltas
+                
+                # Convert rotation deltas to quaternion deltas (small rotations)
+                rotation_deltas_rad = np.radians(rotation_deltas_deg)
+                # For small angles, quaternion ≈ [sin(θ/2), sin(φ/2), sin(ψ/2), cos(θ/2)]
+                # But for deltas, we use small angle approximation: [θ/2, φ/2, ψ/2, 1]
+                quat_deltas = np.concatenate([rotation_deltas_rad / 2.0, [1.0]])  # Small rotation quaternion
+                quat_deltas = quat_deltas / np.linalg.norm(quat_deltas)  # Normalize
+                
+                continuous_action = np.concatenate([
+                    observation_elements['attention_output'],  # Position target (3D)
+                    quat_deltas,                              # Rotation deltas (4D) 
+                    gripper_action])                          # Gripper action (1D)
+            else:
+                # Fallback: use attention output with default orientation and gripper
+                continuous_action = np.concatenate([
+                    observation_elements['attention_output'],
+                    np.array([0, 0, 0, 1]),  # No rotation delta (identity quaternion)
+                    np.array([0])])          # Default gripper action
 
 
         if self._act_depth < len(self._qattention_agents)-1:

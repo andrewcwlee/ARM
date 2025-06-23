@@ -116,11 +116,11 @@ hydra:
     - rlbench.task=open_drawer
     - rlbench.cameras=[active]
     - framework.training_iterations=1
-    - rlbench.demo_path=/home/andrewlee/_research/ota/demos/open_drawer
+    - rlbench.demo_path=/home/andrewlee/_research/ota/ARM/demos
   job:
     name: launch
     chdir: null
-    override_dirname: framework.training_iterations=1,method=LENS,rlbench.cameras=[active],rlbench.demo_path=/home/andrewlee/_research/ota/demos/open_drawer,rlbench.task=open_drawer
+    override_dirname: framework.training_iterations=1,method=LENS,rlbench.cameras=[active],rlbench.demo_path=/home/andrewlee/_research/ota/ARM/demos,rlbench.task=open_drawer
     id: ???
     num: ???
     config_name: config

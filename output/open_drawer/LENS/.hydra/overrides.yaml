@@ -2,4 +2,4 @@
 - rlbench.task=open_drawer
 - rlbench.cameras=[active]
 - framework.training_iterations=1
-- rlbench.demo_path=/home/andrewlee/_research/ota/demos/open_drawer
+- rlbench.demo_path=/home/andrewlee/_research/ota/ARM/demos

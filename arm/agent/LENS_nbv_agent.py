@@ -649,21 +649,41 @@ class LensNBVAgent(Agent):
         attention_output = bounds[:, :3] + res * coords + res / 2
         
         
-        # viewpoint coordinate  
+        # viewpoint coordinate - LENS Phase 6: Generate continuous camera deltas
         if self._layer < self._layer_num - 1:
-
-            complate_vp = torch.zeros([1,3]).int().to(self._device)
+            # LENS Phase 6: Generate continuous camera deltas for exploration
+            # Instead of discrete absolute positions, output small continuous movement deltas
+            
             if rot_and_grip_indicies is not None:
-                viewpoint_indices = rot_and_grip_indicies.int()
-                complate_vp[:,self._viewpoint_axes_movable] = viewpoint_indices[:,:]
-
-            viewpoint_coordinate = viewpoint_agent_bounds[:,:3] + \
-                self._viewpoint_resolution * complate_vp[0] + self._viewpoint_resolution/2
+                # Convert discrete indices to continuous deltas with exploration noise
+                viewpoint_indices = rot_and_grip_indicies.float()
+                
+                # Add continuous exploration noise for smooth camera movement
+                if not deterministic:
+                    exploration_noise = torch.normal(0.0, 0.5, size=viewpoint_indices.shape).to(self._device)
+                    viewpoint_indices = viewpoint_indices + exploration_noise
+                
+                # Scale to small delta range: ±5° for camera exploration (based on OTA resolution)
+                max_indices = ((viewpoint_agent_bounds[:,3:] - viewpoint_agent_bounds[:,:3]) / self._viewpoint_resolution).float()
+                normalized_indices = (viewpoint_indices / (max_indices + 1e-8)) * 2.0 - 1.0  # [-1, 1]
+                
+                # Convert to small camera movement deltas for exploration
+                camera_deltas = normalized_indices * torch.tensor([0.0, 5.0, 5.0]).to(self._device)  # ±5° deltas
+                
+                # Extract only movable axes (typically θ and φ, not r)
+                if self._viewpoint_axes_movable.sum() > 0:
+                    viewpoint_coordinate = camera_deltas[self._viewpoint_axes_movable][None, :]
+                else:
+                    viewpoint_coordinate = torch.zeros([1, 2]).to(self._device)  # Default 2D for θ,φ
+            else:
+                # Default: small random exploration movement
+                if not deterministic:
+                    viewpoint_coordinate = torch.normal(0.0, 2.0, size=(1, int(self._viewpoint_axes_movable.sum()))).to(self._device)
+                else:
+                    viewpoint_coordinate = torch.zeros([1, int(self._viewpoint_axes_movable.sum())]).to(self._device)
         else:
-            # nbp agent 
-            viewpoint_coordinate = torch.tensor([0,0,0],dtype=torch.float32)[None].to(self._device) 
-
-        viewpoint_coordinate = torch.clip(viewpoint_coordinate,viewpoint_agent_bounds[:,:3],viewpoint_agent_bounds[:,3:])
+            # nbp agent - no camera movement 
+            viewpoint_coordinate = torch.tensor([0,0,0],dtype=torch.float32)[None].to(self._device)
         
         observation_elements = {
             'attention_output': attention_output, # [1,3] 

@@ -86,7 +86,7 @@ method:
 rlbench:
   task: open_drawer
   demos: 30
-  demo_path: /home/andrewlee/_research/ota/demos/open_drawer
+  demo_path: /home/andrewlee/_research/ota/ARM/demos
   episode_length: 10
   cameras:
   - active
